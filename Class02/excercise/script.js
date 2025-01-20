@@ -214,8 +214,6 @@ content.addEventListener("click", function (event) {
   event.stopPropagation();
   let action = event.target.name;
   let id = event.target.value;
-  console.log(action);
-  console.log(id);
   switch (action) {
     case actions.complete:
       completeTodo(Number(id));
