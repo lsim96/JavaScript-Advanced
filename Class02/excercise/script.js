@@ -2,7 +2,7 @@
 function Todo(id, title, description) {
   this.id = id;
   this.title = title;
-  this.discription = description;
+  this.description = description;
   this.isComplete = false;
 }
 
@@ -10,15 +10,55 @@ function Todo(id, title, description) {
 let todoInMemory = {
   todos: [],
   todoIdCounter: 1,
+  isShowTodosActive: false,
+};
+
+let actions = {
+  complete: "complete",
+  remove: "remove",
+  edit: "edit",
 };
 
 let form = document.getElementById("add-todo-form");
+let content = document.getElementById("content");
+let saveBtn = document.getElementById("save-todo");
+let editBtn = document.getElementById("edit-todo");
 
 //Functions
 function createTodo(title, description) {
   let todo = new Todo(todoInMemory.todoIdCounter, title, description);
   todoInMemory.todoIdCounter += 1;
   return todo;
+}
+
+function editTodo(id) {
+  showHideElement(form, false);
+  let todoEdit = {};
+  for (let todo of todoInMemory.todos) {
+    if (todo.id === id) {
+      todoEdit = todo;
+      break;
+    }
+  }
+
+  let inputs = form.getElementsByTagName("input");
+  for (let input of inputs) {
+    if (input.name === "title") {
+      input.value = todoEdit.title;
+      continue;
+    }
+
+    if (input.name === "description") {
+      input.value = todoEdit.description;
+      continue;
+    }
+  }
+
+  //hide save btn
+  showHideElement(saveBtn, true);
+  //show edit btn
+  showHideElement(editBtn, false);
+  editBtn.value = id;
 }
 
 function resetInputs(parentElement) {
@@ -46,9 +86,93 @@ function showHideElement(element, isHidden) {
   element.style.display = isHidden ? "none" : "block";
 }
 
+function showTodos(element) {
+  let html = "<ol>";
+  for (let todo of todoInMemory.todos) {
+    let completeBtn = "";
+    if (!todo.isComplete) {
+      completeBtn = `<button type="button" name = "${actions.complete}" value = "${todo.id}">Complete</button>`;
+    }
+    let li = `
+    <li ${todo.isComplete ? "style = 'background-color: yellow'" : ""} >
+    <span>${todo.title}</span>
+    <span>${todo.description}</span>
+    ${completeBtn}
+    <button type="button" name = "${actions.edit}" value = "${
+      todo.id
+    }">Edit</button>
+    <button type="button" name = "${actions.remove}" value = "${
+      todo.id
+    }">Remove</button>
+    </li>`;
+    html += li;
+  }
+  html += "</ol>";
+  element.innerHTML = html;
+}
+
+function completeTodo(id) {
+  for (let todo of todoInMemory.todos) {
+    if (todo.id === id) {
+      todo.isComplete = true;
+      break;
+    }
+  }
+}
+
+function removeTodo(id) {
+  //set todo to null
+  for (let i = 0; i < todoInMemory.todos.length; i++) {
+    let todo = todoInMemory.todos[i];
+    if (todo.id === id) {
+      todoInMemory.todos[i] = null;
+      break;
+    }
+  }
+  //clean array from nulls
+  let todos = [];
+  for (let todo of todoInMemory.todos) {
+    if (todo) {
+      todos.push(todo);
+    }
+  }
+  todoInMemory.todos = todos;
+}
+
+function isValidTodoInput(title) {
+  let validationResult = {
+    isValid: true,
+    validationMessage: "",
+  };
+  //required
+  if (!title) {
+    validationResult.isValid = false;
+    validationResult.validationMessage = "Title is required";
+  } else if (title.length > 30) {
+    validationResult.isValid = false;
+    validationResult.validationMessage =
+      "Title length is exceding 30 characters";
+  }
+
+  return validationResult;
+}
+
+function showErrorMessage(message) {
+  // let html = `<span style = 'color: red; font'><i>${message}</i></span>`;
+  let element = document.createElement("span");
+  element.innerHTML = `<i>${message}</i>`;
+  element.style.color = "red";
+  form.appendChild(element);
+}
+
+function removeErrorMessage() {
+  form.lastElementChild.innerHTML = "";
+}
+
 //Events
 document.querySelector("#add-todo").addEventListener("click", function () {
   showHideElement(form, false);
+  showHideElement(editBtn, true);
 });
 
 document.querySelector("#reset-todo").addEventListener("click", function () {
@@ -56,10 +180,70 @@ document.querySelector("#reset-todo").addEventListener("click", function () {
 });
 
 document.getElementById("save-todo").addEventListener("click", function () {
+  let erroeMessageSpan = form.lastElementChild;
+  console.log(erroeMessageSpan.tagName);
+  if (erroeMessageSpan.tagName === "SPAN") {
+    removeErrorMessage();
+  }
+
   let inputValues = getValuesFromInputs(form);
-  let todo = createTodo(inputValues.title, inputValues.description);
-  todoInMemory.todos.push(todo);
-  resetInputs(form);
+
+  let validation = isValidTodoInput(inputValues.title);
+
+  if (validation.isValid) {
+    let todo = createTodo(inputValues.title, inputValues.description);
+    todoInMemory.todos.push(todo);
+    resetInputs(form);
+    showHideElement(form, true);
+    console.log(todoInMemory.todos);
+
+    if (todoInMemory.isShowTodosActive) {
+      showTodos(content);
+    }
+  } else {
+    showErrorMessage(validation.validationMessage);
+  }
+});
+
+document.getElementById("show-todo").addEventListener("click", function () {
+  showTodos(content);
+  todoInMemory.isShowTodosActive = true;
+});
+
+content.addEventListener("click", function (event) {
+  event.stopPropagation();
+  let action = event.target.name;
+  let id = event.target.value;
+  console.log(action);
+  console.log(id);
+  switch (action) {
+    case actions.complete:
+      completeTodo(Number(id));
+      showTodos(content);
+      break;
+    case actions.remove:
+      removeTodo(Number(id));
+      showTodos(content);
+      break;
+    case actions.edit:
+      editTodo(Number(id));
+      showTodos(content);
+      break;
+  }
+});
+
+editBtn.addEventListener("click", function (event) {
+  let inputs = getValuesFromInputs(form);
+  let id = Number(event.currentTarget.value);
+  for (let todo of todoInMemory.todos) {
+    if (todo.id === id) {
+      todo.title = inputs.title;
+      todo.description = inputs.description;
+    }
+  }
+
+  showHideElement(saveBtn, false);
+  showHideElement(editBtn, true);
   showHideElement(form, true);
-  console.log(todoInMemory.todos);
+  showTodos(content);
 });
