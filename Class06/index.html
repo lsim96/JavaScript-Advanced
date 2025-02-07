@@ -14,6 +14,7 @@
       integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
       crossorigin="anonymous"
     ></script>
+    <link rel="stylesheet" href="./css/styles.css" />
     <title>Fake E-Shop</title>
   </head>
   <body>
@@ -58,6 +59,16 @@
         <div id="show-products"></div>
       </div>
     </div>
+    <div class="dropdown-bottom" id="divRandom" style="display: none">
+      <div id="products"></div>
+      <select id="pageSize"></select>
+      <div id="currentPageNumber"></div>
+      <div id="button-container">
+        <button id="prevBtn">PREV</button>
+        <button id="nextBtn">NEXT</button>
+      </div>
+    </div>
+
     <script src="./scripts/script.js"></script>
   </body>
 </html>

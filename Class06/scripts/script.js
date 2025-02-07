@@ -4,10 +4,19 @@ const urls = {
   productsByCategory: "https://fakestoreapi.com/products/category/",
 };
 
+let pageSize = [3, 6, 9];
+let currentPageSize = 6;
+let pagination = {
+  totalItems: 0,
+  maxPages: 0,
+  currentPage: 0,
+};
+
 let filtersDiv = document.getElementById("filters");
 let productsMainDiv = document.getElementById("products");
 let productsDiv = document.getElementById("show-products");
 let categoryHeader = document.getElementById("category-title");
+let divToShowSelect = document.getElementById("divRandom");
 
 //get all catergories
 
@@ -19,11 +28,19 @@ function getAllCategories() {
     });
 }
 
-function getAllProducts() {
+function getAllProducts(page, pageSize) {
   fetch(urls.allProducts)
     .then((res) => res.json())
     .then((products) => {
-      showProducts(products);
+      pagination.totalItems = products.length;
+      pagination.maxPages = Math.ceil(pagination.totalItems / pageSize);
+      let currentPageNumber = document.getElementById("currentPageNumber");
+      currentPageNumber.innerText = `${pagination.currentPage} / ${pagination.maxPages}`;
+      // console.log(pagination.maxPages);
+
+      let newProducts = products.splice(page * pageSize, pageSize);
+
+      showProducts(newProducts);
     });
 }
 
@@ -81,9 +98,24 @@ function showProducts(products) {
   }
   productsDiv.innerHTML = html;
   addCartEventListeners();
+  setPageSize();
 }
 
 getAllCategories();
+
+function setPageSize() {
+  let selectDiv = document.getElementById("pageSize");
+  let html = "";
+  for (let page of pageSize) {
+    let option = ` <option value="${page}"
+    ${page === currentPageSize ? "selected" : ""}
+    >${page}</option>`;
+
+    html += option;
+  }
+
+  selectDiv.innerHTML = html;
+}
 
 document
   .getElementById("category-filter")
@@ -99,6 +131,29 @@ document
   .addEventListener("click", function () {
     filtersDiv.style.display = "block";
     productsMainDiv.style.display = "block";
-    categoryHeader.innerText = "All products";
-    getAllProducts();
+    divToShowSelect.style.display = "block";
+    getAllProducts(pagination.currentPage, currentPageSize);
   });
+
+document.getElementById("pageSize").addEventListener("change", function (e) {
+  currentPageSize = e.target.value;
+  getAllProducts(pagination.currentPage, currentPageSize);
+  console.log(currentPageSize);
+  console.log(e.target.value);
+});
+
+document.getElementById("prevBtn").addEventListener("click", function () {
+  if (pagination.currentPage !== 0) {
+    pagination.currentPage--;
+  }
+  getAllProducts(pagination.currentPage, currentPageSize);
+});
+
+document.getElementById("nextBtn").addEventListener("click", function () {
+  if (pagination.currentPage !== pagination.maxPages) {
+    pagination.currentPage++;
+  } else {
+    pagination.currentPage === pagination.maxPages;
+  }
+  getAllProducts(pagination.currentPage, currentPageSize);
+});
