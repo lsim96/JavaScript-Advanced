@@ -52,12 +52,17 @@ function getProductsByCategory(category) {
     });
 }
 
+let cartProductIds = [];
+
 function addCartEventListeners() {
   let cartBtns = document.querySelectorAll(".cart");
   console.log(cartBtns);
   for (let btn of cartBtns) {
     btn.addEventListener("click", function (e) {
-      console.log(e.target);
+      console.log(e.target.getAttribute("data-product-id"));
+      let id = e.target.getAttribute("data-product-id");
+      cartProductIds.push(+id);
+      console.log(cartProductIds);
     });
   }
 }
@@ -117,6 +122,36 @@ function setPageSize() {
   selectDiv.innerHTML = html;
 }
 
+function getAllProductDetails(ids) {
+  return fetch(urls.allProducts)
+    .then((response) => response.json())
+    .then((data) => {
+      console.log(data);
+      let result = data.filter((x) => ids.includes(x.id));
+      return result;
+    });
+}
+
+function addingToCart() {
+  let cartDiv = document.getElementById("cartDiv");
+  cartDiv.style.display = "block";
+  getAllProductDetails(cartProductIds).then((data) => {
+    let ul = `<ul>`;
+    for (let product of data) {
+      let li = `
+      <li style="display: block">
+      ${product.title}
+      $${product.price}
+      <button href="#" id="btn-remove-cart" data-product-id = '${product.id}'>Remove</button>
+      </li>
+      `;
+
+      ul += li;
+    }
+    cartDiv.innerHTML = ul;
+  });
+}
+
 document
   .getElementById("category-filter")
   .addEventListener("click", function (event) {
@@ -156,4 +191,8 @@ document.getElementById("nextBtn").addEventListener("click", function () {
     pagination.currentPage === pagination.maxPages;
   }
   getAllProducts(pagination.currentPage, currentPageSize);
+});
+
+document.getElementById("cartSection").addEventListener("click", function () {
+  addingToCart();
 });
